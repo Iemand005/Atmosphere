@@ -157,6 +157,7 @@ public:
 		SDL_Event event;
 		fe::SDLWindow *window = (fe::SDLWindow*)this->window.get();
 		while (window->PollSDLEvent(&event)) {
+			continue;
 			ImGui_ImplSDL3_ProcessEvent(&event);
 			auto io = ImGui::GetIO();
 			switch (event.type) {
