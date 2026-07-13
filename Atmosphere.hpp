@@ -67,10 +67,11 @@ public:
 	bool freeCamera = false;
 	float freeCamSpeed = 15.0f;
 	float segmentLength = 12.0f;
+	
+	VulkanDevice d;
 
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(width, height, vr, false) {
 
-		VulkanDevice d;
 		d.Init(window.get());
 
 		SetClearColor(0.1f, 0.3f, 1);
@@ -193,28 +194,32 @@ public:
 
 			ProcessInput();
 
-			if (!freeCamera) {
-				SyncCameraToPlayer();
-			}
+			// if (!freeCamera) {
+			// 	SyncCameraToPlayer();
+			// }
 
-			if (freeCamera) {
-				double dt = fpsCounter.deltaTime;
-				float spd = freeCamSpeed * dt;
-				glm::vec3 cp = camera->GetPos();
-				glm::vec3 right = glm::normalize(glm::cross(camera->front, camera->up));
-				if (window->IsKeyDown(SDL_SCANCODE_W)) cp += camera->front * spd;
-				if (window->IsKeyDown(SDL_SCANCODE_S)) cp -= camera->front * spd;
-				if (window->IsKeyDown(SDL_SCANCODE_A)) cp -= right * spd;
-				if (window->IsKeyDown(SDL_SCANCODE_D)) cp += right * spd;
-				if (window->IsKeyDown(SDL_SCANCODE_SPACE)) cp += camera->up * spd;
-				if (window->IsKeyDown(SDL_SCANCODE_LSHIFT)) cp -= camera->up * spd;
-				camera->SetPos(cp);
-			} else {
-			}
+			// if (freeCamera) {
+			// 	double dt = fpsCounter.deltaTime;
+			// 	float spd = freeCamSpeed * dt;
+			// 	glm::vec3 cp = camera->GetPos();
+			// 	glm::vec3 right = glm::normalize(glm::cross(camera->front, camera->up));
+			// 	if (window->IsKeyDown(SDL_SCANCODE_W)) cp += camera->front * spd;
+			// 	if (window->IsKeyDown(SDL_SCANCODE_S)) cp -= camera->front * spd;
+			// 	if (window->IsKeyDown(SDL_SCANCODE_A)) cp -= right * spd;
+			// 	if (window->IsKeyDown(SDL_SCANCODE_D)) cp += right * spd;
+			// 	if (window->IsKeyDown(SDL_SCANCODE_SPACE)) cp += camera->up * spd;
+			// 	if (window->IsKeyDown(SDL_SCANCODE_LSHIFT)) cp -= camera->up * spd;
+			// 	camera->SetPos(cp);
+			// } else {
+			// }
 
-			Update();
-			Redraw();
+			// Update();
+			// Redraw();
+			d.drawFrame();
 		}
+
+		
+		// vkDeviceWaitIdle(device_); TODO: impl in graphics device class
 		Destroy();
 	}
 
