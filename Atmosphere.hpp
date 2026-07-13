@@ -19,6 +19,7 @@
 
 #include <EditableGame.hpp>
 #include <Primitives.hpp>
+#include <Graphics/VulkanDevice.hpp>
 
 class Atmosphere : public fe::EditableGame {
 public:
@@ -68,6 +69,9 @@ public:
 	float segmentLength = 12.0f;
 
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(width, height, vr, false) {
+
+		VulkanDevice d;
+		d.Init();
 
 		SetClearColor(0.1f, 0.3f, 1);
 
