@@ -101,3 +101,51 @@ if(MSVC)
 endif()
 
 set_property(TARGET Atmosphere PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# ---------------------------------------------------------------
+# GLSL -> SPIR-V shader compilation
+# ---------------------------------------------------------------
+find_program(GLSLC glslc HINTS
+	$ENV{VULKAN_SDK}/Bin
+	$ENV{VULKAN_SDK}/bin
+)
+
+if(GLSLC)
+	message(STATUS "Found glslc: ${GLSLC}")
+
+	set(SHADER_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders)
+	set(SHADER_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/resources/shaders)
+	file(MAKE_DIRECTORY ${SHADER_OUT_DIR})
+
+	set(SHADER_SOURCES
+		${SHADER_SRC_DIR}/VertexShader.glsl
+		${SHADER_SRC_DIR}/FragmentShader.glsl
+	)
+
+	foreach(SHADER ${SHADER_SOURCES})
+		get_filename_component(SHADER_NAME ${SHADER} NAME_WE)
+
+		if(${SHADER_NAME} MATCHES ".*Fragment.*")
+			set(SHADER_STAGE frag)
+		else()
+			set(SHADER_STAGE vert)
+		endif()
+
+		set(SPIRV_OUTPUT ${SHADER_OUT_DIR}/${SHADER_NAME}.spv)
+
+		add_custom_command(
+			OUTPUT ${SPIRV_OUTPUT}
+			COMMAND ${GLSLC} -fstage=${SHADER_STAGE} --target-env=vulkan1.0 ${SHADER} -o ${SPIRV_OUTPUT}
+			DEPENDS ${SHADER}
+			COMMENT "Compiling ${SHADER_NAME}${SHADER_EXT} -> ${SHADER_NAME}.spv"
+			VERBATIM
+		)
+
+		list(APPEND SPIRV_OUTPUTS ${SPIRV_OUTPUT})
+	endforeach()
+
+	add_custom_target(SPIRV_Shaders ALL DEPENDS ${SPIRV_OUTPUTS})
+	add_dependencies(Atmosphere SPIRV_Shaders)
+else()
+	message(WARNING "glslc not found — shader compilation skipped. Set VULKAN_SDK environment variable.")
+endif()
