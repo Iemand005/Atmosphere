@@ -118,8 +118,8 @@ if(GLSLC)
 	file(MAKE_DIRECTORY ${SHADER_OUT_DIR})
 
 	set(SHADER_SOURCES
-		${SHADER_SRC_DIR}/VertexShader.glsl
-		${SHADER_SRC_DIR}/FragmentShader.glsl
+		${SHADER_SRC_DIR}/VertexShader_vk.glsl
+		${SHADER_SRC_DIR}/FragmentShader_vk.glsl
 	)
 
 	foreach(SHADER ${SHADER_SOURCES})
@@ -135,7 +135,7 @@ if(GLSLC)
 
 		add_custom_command(
 			OUTPUT ${SPIRV_OUTPUT}
-			COMMAND ${GLSLC} -fshader-stage=${SHADER_STAGE} --target-env=vulkan1.0 ${SHADER} -o ${SPIRV_OUTPUT}
+			COMMAND ${GLSLC} -fshader-stage=${SHADER_STAGE} --target-env=vulkan1.0 -DFE_VULKAN ${SHADER} -o ${SPIRV_OUTPUT}
 			DEPENDS ${SHADER}
 			COMMENT "Compiling ${SHADER_NAME} -> ${SHADER_NAME}.spv"
 			VERBATIM

@@ -1,11 +1,10 @@
-#version 330 core
-out vec4 FragColor;
+#version 450
 
-in vec3 Normal;
-in vec3 FragPos;
-in vec2 TexCoord;
+layout (location = 0) out vec4 FragColor;
 
-uniform sampler2D ourTexture;
+layout (location = 0) in vec3 Normal;
+layout (location = 1) in vec3 FragPos;
+layout (location = 2) in vec2 TexCoord;
 
 struct PointLight {
     vec3 position;
@@ -14,8 +13,12 @@ struct PointLight {
     float radius;
 };
 
-uniform int lightCount;
-uniform PointLight pointLights[8];
+layout (binding = 0) uniform sampler2D ourTexture;
+
+layout (binding = 1) uniform LightingUBO {
+    int lightCount;
+    PointLight pointLights[8];
+};
 
 void main()
 {
