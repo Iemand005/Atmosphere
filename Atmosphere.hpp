@@ -231,9 +231,9 @@ public:
 
 			ProcessInput();
 
-			// if (!freeCamera) {
-			// 	SyncCameraToPlayer();
-			// }
+			if (!freeCamera) {
+				SyncCameraToPlayer();
+			}
 
 			if (freeCamera) {
 				double dt = fpsCounter.deltaTime;
@@ -252,11 +252,8 @@ public:
 
 			Update();
 			Redraw();
-			// d.drawFrame();
 		}
 
-		
-		// vkDeviceWaitIdle(device_); TODO: impl in graphics device class
 		Destroy();
 	}
 
@@ -266,12 +263,6 @@ public:
 	void DrawUI() override {
 		if (!showDebugUI) return;
 		BeginFrame();
-
-		ImGui::Begin("Chunks");
-		{
-			ImGui::DragInt("Render Distance", &CHUNK_LOAD_DISTANCE);
-		}
-		ImGui::End();
 
 		DrawDebugUI();
 
