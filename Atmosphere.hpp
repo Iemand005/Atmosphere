@@ -168,10 +168,9 @@ public:
 						window->StartMouseCapture();
 					}
 					break;
-				case SDL_EVENT_WINDOW_RESIZED:
-				case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-					Redraw();
-					break;
+			case SDL_EVENT_WINDOW_RESIZED:
+			case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+				break;
 				case SDL_EVENT_MOUSE_MOTION:
 				{
 					if (!window->capturingMouse) break;
