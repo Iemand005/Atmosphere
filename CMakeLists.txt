@@ -137,7 +137,7 @@ if(GLSLC)
 			OUTPUT ${SPIRV_OUTPUT}
 			COMMAND ${GLSLC} -fstage=${SHADER_STAGE} --target-env=vulkan1.0 ${SHADER} -o ${SPIRV_OUTPUT}
 			DEPENDS ${SHADER}
-			COMMENT "Compiling ${SHADER_NAME}${SHADER_EXT} -> ${SHADER_NAME}.spv"
+			COMMENT "Compiling ${SHADER_NAME} -> ${SHADER_NAME}.spv"
 			VERBATIM
 		)
 
