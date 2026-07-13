@@ -8,18 +8,21 @@ layout (location = 0) out vec3 Normal;
 layout (location = 1) out vec3 FragPos;
 layout (location = 2) out vec2 TexCoord;
 
-layout(binding = 0) uniform UBO {
+layout(push_constant) uniform PushConstants {
     mat4 model;
+} pc;
+
+layout(binding = 0) uniform UBO {
     mat4 view;
     mat4 projection;
 };
 
 void main()
 {
-    vec4 worldPos = model * vec4(aPos, 1.0);
+    vec4 worldPos = pc.model * vec4(aPos, 1.0);
     gl_Position = projection * view * worldPos;
 
-    mat3 normalMat = transpose(inverse(mat3(model)));
+    mat3 normalMat = transpose(inverse(mat3(pc.model)));
     Normal = normalMat * aNormal;
     FragPos = worldPos.xyz;
     TexCoord = aTexCoord;
