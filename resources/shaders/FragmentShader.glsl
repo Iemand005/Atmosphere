@@ -1,12 +1,14 @@
+#ifdef VULKAN
+#version 450
+#else
 #version 330 core
+#endif
+
 layout (location = 0) out vec4 FragColor;
 
 layout (location = 0) in vec3 Normal;
 layout (location = 1) in vec3 FragPos;
 layout (location = 2) in vec2 TexCoord;
-
-#ifdef VULKAN
-layout (binding = 0) uniform sampler2D ourTexture;
 
 struct PointLight {
     vec3 position;
@@ -14,6 +16,9 @@ struct PointLight {
     float intensity;
     float radius;
 };
+
+#ifdef VULKAN
+layout (binding = 0) uniform sampler2D ourTexture;
 
 layout(binding = 1) uniform LightingUBO {
     int lightCount;
@@ -21,13 +26,6 @@ layout(binding = 1) uniform LightingUBO {
 };
 #else
 uniform sampler2D ourTexture;
-
-struct PointLight {
-    vec3 position;
-    vec3 color;
-    float intensity;
-    float radius;
-};
 
 uniform int lightCount;
 uniform PointLight pointLights[8];
