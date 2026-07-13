@@ -157,7 +157,7 @@ public:
 		SDL_Event event;
 		fe::SDLWindow *window = (fe::SDLWindow*)this->window.get();
 		while (window->PollSDLEvent(&event)) {
-			continue;
+			// continue;
 			ImGui_ImplSDL3_ProcessEvent(&event);
 			auto io = ImGui::GetIO();
 			switch (event.type) {
@@ -235,20 +235,20 @@ public:
 			// 	SyncCameraToPlayer();
 			// }
 
-			// if (freeCamera) {
-			// 	double dt = fpsCounter.deltaTime;
-			// 	float spd = freeCamSpeed * dt;
-			// 	glm::vec3 cp = camera->GetPos();
-			// 	glm::vec3 right = glm::normalize(glm::cross(camera->front, camera->up));
-			// 	if (window->IsKeyDown(SDL_SCANCODE_W)) cp += camera->front * spd;
-			// 	if (window->IsKeyDown(SDL_SCANCODE_S)) cp -= camera->front * spd;
-			// 	if (window->IsKeyDown(SDL_SCANCODE_A)) cp -= right * spd;
-			// 	if (window->IsKeyDown(SDL_SCANCODE_D)) cp += right * spd;
-			// 	if (window->IsKeyDown(SDL_SCANCODE_SPACE)) cp += camera->up * spd;
-			// 	if (window->IsKeyDown(SDL_SCANCODE_LSHIFT)) cp -= camera->up * spd;
-			// 	camera->SetPos(cp);
-			// } else {
-			// }
+			if (freeCamera) {
+				double dt = fpsCounter.deltaTime;
+				float spd = freeCamSpeed * dt;
+				glm::vec3 cp = camera->GetPos();
+				glm::vec3 right = glm::normalize(glm::cross(camera->front, camera->up));
+				if (window->IsKeyDown(SDL_SCANCODE_W)) cp += camera->front * spd;
+				if (window->IsKeyDown(SDL_SCANCODE_S)) cp -= camera->front * spd;
+				if (window->IsKeyDown(SDL_SCANCODE_A)) cp -= right * spd;
+				if (window->IsKeyDown(SDL_SCANCODE_D)) cp += right * spd;
+				if (window->IsKeyDown(SDL_SCANCODE_SPACE)) cp += camera->up * spd;
+				if (window->IsKeyDown(SDL_SCANCODE_LSHIFT)) cp -= camera->up * spd;
+				camera->SetPos(cp);
+			} else {
+			}
 
 			Update();
 			Redraw();
