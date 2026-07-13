@@ -68,11 +68,11 @@ public:
 	float freeCamSpeed = 15.0f;
 	float segmentLength = 12.0f;
 	
-	VulkanDevice d;
+	// fe::OpenGLRenderDevice d;
 
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(width, height, vr, false) {
 
-		d.Init(window.get());
+		// d.Init(window.get());
 
 		SetClearColor(0.1f, 0.3f, 1);
 
@@ -252,7 +252,7 @@ public:
 
 			// Update();
 			// Redraw();
-			d.drawFrame();
+			// d.drawFrame();
 		}
 
 		
