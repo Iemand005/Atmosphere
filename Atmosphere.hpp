@@ -67,8 +67,6 @@ public:
 	float freeCamSpeed = 15.0f;
 	float segmentLength = 12.0f;
 
-	std::unique_ptr<ChunkManager> chunkManager = std::make_unique<ChunkManager>(12);
-
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(width, height, vr, false) {
 
 		SetClearColor(0.1f, 0.3f, 1);
@@ -104,18 +102,6 @@ public:
 			this->player->physicsObject->SetPosition(this->player->state.position);
 		}
 
-		UpdateLoadedChunks();
-	}
-
-	void UpdateLoadedChunks() {
-		glm::vec3 playerPos = camera->GetPos();
-
-		int playerChunkX = static_cast<int>(std::floor(playerPos.x / 16.0f));
-		int playerChunkZ = static_cast<int>(std::floor(playerPos.z / 16.0f));
-
-		chunkManager->LoadChunksInsideRange(glm::ivec2{playerChunkX, playerChunkZ}, CHUNK_LOAD_DISTANCE);
-
-		chunkManager->UnloadChunksOutsideRange(glm::ivec2{playerChunkX, playerChunkZ}, CHUNK_LOAD_DISTANCE);
 	}
 
 	void SyncCameraToPlayer() {
@@ -203,8 +189,6 @@ public:
 
 			ProcessInput();
 
-			chunkManager->Update(1, this->physicsEngine.get(), this->scene.get());
-
 			if (!freeCamera) {
 				SyncCameraToPlayer();
 			}
@@ -224,7 +208,6 @@ public:
 			} else {
 			}
 
-			UpdateLoadedChunks();  // Update loaded chunks before rendering
 			Update();
 			Redraw();
 		}
