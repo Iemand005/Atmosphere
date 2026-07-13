@@ -250,8 +250,8 @@ public:
 			// } else {
 			// }
 
-			// Update();
-			// Redraw();
+			Update();
+			Redraw();
 			// d.drawFrame();
 		}
 
