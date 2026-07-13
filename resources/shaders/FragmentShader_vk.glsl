@@ -2,11 +2,17 @@
 
 layout (location = 0) out vec4 FragColor;
 
-layout (location = 0) in vec3 Normal;
-layout (location = 1) in vec3 FragPos;
 layout (location = 2) in vec2 TexCoord;
+
+layout(binding = 0) uniform UBO {
+    mat4 model;
+    mat4 view;
+    mat4 projection;
+};
+
+layout (binding = 1) uniform sampler2D ourTexture;
 
 void main()
 {
-    FragColor = vec4(0.8, 0.4, 0.2, 1.0);
+    FragColor = texture(ourTexture, TexCoord);
 }
