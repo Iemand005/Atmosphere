@@ -31,7 +31,7 @@ public:
 	std::vector<glm::vec3> path;
 	int windowStart = 0;
 	float pathIndex = 1.0f;
-	std::vector<std::shared_ptr<fe::Object>> chunkObjects;  // Track loaded chunk objects
+	std::vector<std::shared_ptr<fe::Object<>>> chunkObjects;  // Track loaded chunk objects
 	std::vector<bool> chunksLoaded;  // Track which chunks have been meshed
 	glm::vec3 lastUp = glm::vec3(0, 1, 0);
 	glm::vec3 lastRight = glm::vec3(1, 0, 0);
@@ -135,7 +135,7 @@ public:
 		bottomMesh.loadTexture("resources/textures/cake_bottom.png", fe::TextureScaling::Nearest);
 		bottomMesh.hasTransparency = true;
 
-		auto CAKEObject = std::make_shared<fe::Object>(planeMesh);
+		auto CAKEObject = std::make_shared<fe::Object<>>(planeMesh);
 		CAKEObject->meshes.push_back(sideMesh);
 		CAKEObject->meshes.push_back(bottomMesh);
 
