@@ -71,7 +71,7 @@ public:
 	
 	// fe::OpenGLRenderDevice d;
 
-	OpenVR ovr;
+	fe::OpenVR ovr;
 
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(width, height, vr, false) {
 
