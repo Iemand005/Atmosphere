@@ -20,6 +20,7 @@
 #include <EditableGame.hpp>
 #include <Primitives.hpp>
 #include <Graphics/VulkanDevice.hpp>
+#include <openvr/OpenVR.hpp>
 
 class Atmosphere : public fe::EditableGame {
 public:
@@ -70,9 +71,12 @@ public:
 	
 	// fe::OpenGLRenderDevice d;
 
+	OpenVR ovr;
+
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(width, height, vr, false) {
 
 		// d.Init(window.get());
+		ovr.Init();
 
 		SetClearColor(0.1f, 0.3f, 1);
 
