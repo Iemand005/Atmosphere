@@ -77,6 +77,7 @@ public:
 
 		// d.Init(window.get());
 		ovr.Init();
+		ovr.InitOverlay();
 
 		SetClearColor(0.1f, 0.3f, 1);
 
