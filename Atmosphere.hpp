@@ -145,6 +145,12 @@ public:
 		CAKEObject->state.scale.x = CAKEObject->state.scale.z = 14.0f / 16.0f;
 		CAKEObject->state.scale.y = 0.5f;
 		this->scene->AddObject(CAKEObject);
+
+		auto sphereMesh = fe::Primitives::GenerateSphere(0.5f, 32, 24);
+		auto sphereObject = std::make_shared<fe::Object<>>(sphereMesh);
+		sphereObject->name = "Sphere";
+		sphereObject->state.position = glm::vec3(2.0f, 1.0f, 0.0f);
+		this->scene->AddObject(sphereObject);
 	}
 
 	void SyncCameraToPlayer() {
