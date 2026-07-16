@@ -79,7 +79,7 @@ public:
 		ovr.Init();
 		ovr.InitOverlay();
 		ovr.CreateOverlayTexture(window->width, window->height);
-		ResizeEvent = [this](int w, int h) { ovr.CreateOverlayTexture(w, h); };
+		// ResizeEvent = [this](int w, int h) { ovr.CreateOverlayTexture(w, h); };
 
 
 		SetClearColor(0.1f, 0.3f, 1);
