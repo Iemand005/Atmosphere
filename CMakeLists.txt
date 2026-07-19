@@ -90,7 +90,7 @@ find_package(X11 REQUIRED)
 target_link_libraries(Atmosphere PRIVATE X11::X11)
 endif()
 
-set_property(TARGET Atmosphere PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+set_property(TARGET Atmosphere PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 	
 if(MSVC)
 	target_compile_options(Atmosphere PRIVATE $<$<CONFIG:Debug>:/Zi>)
@@ -100,7 +100,16 @@ if(MSVC)
 	add_compile_options(/RTC1)
 endif()
 
-set_property(TARGET Atmosphere PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+# ---------------------------------------------------------------
+# Copy all runtime resources (glsl shaders, textures) to build output
+# ---------------------------------------------------------------
+set(RESOURCE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources)
+set(RESOURCE_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/resources)
+
+add_custom_command(TARGET Atmosphere POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory ${RESOURCE_SRC_DIR} ${RESOURCE_OUT_DIR}
+	COMMENT "Copying resources to ${RESOURCE_OUT_DIR}"
+)
 
 # ---------------------------------------------------------------
 # GLSL -> SPIR-V shader compilation
@@ -146,14 +155,6 @@ if(GLSLC)
 
 	add_custom_target(SPIRV_Shaders ALL DEPENDS ${SPIRV_OUTPUTS})
 	add_dependencies(Atmosphere SPIRV_Shaders)
-
-	# Copy compiled SPIR-V shaders to source resources/shaders (where the executable finds them at runtime)
-	foreach(SPIRV_FILE ${SPIRV_OUTPUTS})
-		add_custom_command(TARGET Atmosphere POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SPIRV_FILE} ${SHADER_SRC_DIR}
-			COMMENT "Copying ${SPIRV_FILE} -> ${SHADER_SRC_DIR}"
-		)
-	endforeach()
 else()
 	message(WARNING "glslc not found — shader compilation skipped. Set VULKAN_SDK environment variable.")
 endif()
