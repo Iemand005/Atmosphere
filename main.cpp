@@ -6,12 +6,10 @@
 #include <X11/Xlib.h>
 #endif
 #include <string>
-#include <cstring>
 #include <iostream>
 #include "Atmosphere.hpp"
 
 #include <fstream>
-#include <sstream>
 #include <chrono>
 
 void LogToFile(const std::string& message)
