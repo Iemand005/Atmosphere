@@ -69,18 +69,7 @@ public:
 	float freeCamSpeed = 15.0f;
 	float segmentLength = 12.0f;
 	
-	// fe::OpenGLRenderDevice d;
-
-	fe::OpenVR ovr;
-
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(width, height, vr, false) {
-
-		// d.Init(window.get());
-		ovr.Init();
-		ovr.InitOverlay();
-		ovr.CreateOverlayTexture(this->window->width, window->height);
-		// ResizeEvent = [this](int w, int h) { ovr.CreateOverlayTexture(w, h); };
-
 
 		SetClearColor(0.1f, 0.3f, 1);
 
@@ -92,7 +81,7 @@ public:
 	}
 
 	void OnPreSwap() override {
-		ovr.CaptureAndSubmit();
+		// ovr.CaptureAndSubmit();
 	}
 
 	void RebuildPlayerPhysicsBody() {
