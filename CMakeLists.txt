@@ -146,6 +146,14 @@ if(GLSLC)
 
 	add_custom_target(SPIRV_Shaders ALL DEPENDS ${SPIRV_OUTPUTS})
 	add_dependencies(Atmosphere SPIRV_Shaders)
+
+	# Copy compiled SPIR-V shaders to source resources/shaders (where the executable finds them at runtime)
+	foreach(SPIRV_FILE ${SPIRV_OUTPUTS})
+		add_custom_command(TARGET Atmosphere POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SPIRV_FILE} ${SHADER_SRC_DIR}
+			COMMENT "Copying ${SPIRV_FILE} -> ${SHADER_SRC_DIR}"
+		)
+	endforeach()
 else()
 	message(WARNING "glslc not found — shader compilation skipped. Set VULKAN_SDK environment variable.")
 endif()
