@@ -42,6 +42,7 @@ public:
 	unsigned int terrainSeed = 42;
 
 	float waterLevel = 0.15f;
+	std::shared_ptr<fe::Object<>> globeObject;
 
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(fe::XRGameOptions(width, height, vr)) {
 
@@ -146,7 +147,7 @@ public:
 
 		// Globe with procedural terrain
 		auto globeMesh = GenerateTerrainSphere();
-		auto globeObject = std::make_shared<fe::Object<>>(globeMesh);
+		globeObject = std::make_shared<fe::Object<>>(globeMesh);
 		globeObject->name = "Globe";
 		globeObject->state.position = glm::vec3(0.0f);
 		globeObject->color = glm::vec3(0.3f, 0.6f, 0.3f);
@@ -266,11 +267,9 @@ public:
 		ImGui::SliderFloat("Water Level", &waterLevel, 0.0f, 1.0f);
 		if (ImGui::Button("Regenerate")) {
 			terrainSeed = static_cast<unsigned int>(rand());
-			// Rebuild globe
-			auto globeMesh = GenerateTerrainSphere();
-			auto globe = scene->FindObjectByName("Globe");
-			if (globe) {
-				globe->mesh = std::make_shared<fe::Mesh<>>(globeMesh);
+			if (globeObject) {
+				globeObject->meshes.clear();
+				globeObject->meshes.push_back(GenerateTerrainSphere());
 			}
 		}
 		ImGui::End();
