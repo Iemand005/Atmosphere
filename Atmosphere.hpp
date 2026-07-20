@@ -43,6 +43,12 @@ public:
 	float waterLevel = 0.15f;
 	std::shared_ptr<fe::Object<>> globeObject;
 
+	// Flight simulator
+	float flightVelocity = 30.0f;
+	float planeAltitude = 0.8f;
+	float planeSize = 0.4f;
+	std::shared_ptr<fe::Object<>> planeObject;
+
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(fe::XRGameOptions(width, height, vr)) {
 
 		SetClearColor(0.05f, 0.05f, 0.15f);
@@ -152,6 +158,14 @@ public:
 		globeObject->color = glm::vec3(0.3f, 0.6f, 0.3f);
 		this->scene->AddObject(globeObject);
 
+		// Flight plane (simple rectangle)
+		auto planeMesh = fe::Primitives::GeneratePlane(planeSize, planeSize * 0.6f);
+		planeObject = std::make_shared<fe::Object<>>(planeMesh);
+		planeObject->name = "Plane";
+		planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
+		planeObject->color = glm::vec3(1.0f, 0.25f, 0.1f);
+		this->scene->AddObject(planeObject);
+
 		// Player
 		this->player = std::make_shared<fe::Character>();
 		this->scene->AddObject(player);
@@ -227,8 +241,9 @@ public:
 
 			ProcessInput();
 
+			double dt = fpsCounter.deltaTime;
+
 			if (freeCamera) {
-				double dt = fpsCounter.deltaTime;
 				float spd = freeCamSpeed * dt;
 				glm::vec3 cp = camera->GetPos();
 				glm::vec3 right = glm::normalize(glm::cross(camera->front, camera->up));
@@ -239,6 +254,14 @@ public:
 				if (window->IsKeyDown(SDL_SCANCODE_SPACE)) cp += camera->up * spd;
 				if (window->IsKeyDown(SDL_SCANCODE_LSHIFT)) cp -= camera->up * spd;
 				camera->SetPos(cp);
+			}
+
+			// Rotate globe to simulate flight
+			globeObject->state.rotation.y += flightVelocity * dt;
+
+			// Keep plane above the globe
+			if (planeObject) {
+				planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
 			}
 
 			Update();
@@ -270,6 +293,14 @@ public:
 				globeObject->meshes.clear();
 				globeObject->meshes.push_back(GenerateTerrainSphere());
 			}
+		}
+		ImGui::End();
+
+		ImGui::Begin("Flight");
+		ImGui::SliderFloat("Velocity", &flightVelocity, 0.0f, 200.0f);
+		ImGui::SliderFloat("Altitude", &planeAltitude, 0.1f, 5.0f);
+		if (ImGui::Button("Reset Rotation")) {
+			globeObject->state.rotation.y = 0.0f;
 		}
 		ImGui::End();
 
