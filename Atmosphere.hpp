@@ -4,14 +4,13 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdio>
-#include <iostream>
 #include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/noise.hpp>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_sdl3.h>
