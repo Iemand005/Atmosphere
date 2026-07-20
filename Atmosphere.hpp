@@ -3,11 +3,11 @@
 #define NOMINMAX
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
-#include <fstream>
 #include <iostream>
-#include <map>
 #include <string>
+#include <vector>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,60 +20,33 @@
 #include <EditableGame.hpp>
 #include <Primitives.hpp>
 #include <Graphics/VulkanDevice.hpp>
-#include <openvr/OpenVR.hpp>
 
 class Atmosphere : public fe::EditableGame {
 public:
 
 	bool showDebugUI = false;
-	
-	bool useRectangularPlayerHitbox = true;
-
-	std::vector<glm::vec3> path;
-	int windowStart = 0;
-	float pathIndex = 1.0f;
-	std::vector<std::shared_ptr<fe::Object<>>> chunkObjects;  // Track loaded chunk objects
-	std::vector<bool> chunksLoaded;  // Track which chunks have been meshed
-	glm::vec3 lastUp = glm::vec3(0, 1, 0);
-	glm::vec3 lastRight = glm::vec3(1, 0, 0);
-	glm::vec3 prevEndForward{0};
-	bool hasPrevEnd = false;
-
-	static constexpr int POINTS_PER_CHUNK = 4;
-	static constexpr int SHIFT = 3;
-	static constexpr int MAX_CHUNKS = 32;
-	static constexpr int TUNNEL_SEGMENTS = 64;
-	static constexpr int SUBDIVISIONS_PER_SEG = 48;
-	int CHUNK_LOAD_DISTANCE = 2;  // Load chunks within this many chunks of player
-	static constexpr int GRID_WIDTH = 1;  // 5x5 grid
-	static constexpr int GRID_HEIGHT = 1;
-
-	int NUM_CHUNKS = 4;
-
-	float lightSpeed = 0.3f;
-
-	float bgColorFreq = 0.3f;
-	float visualizerScale = 8.0f;
-
-	float audioAmplitudeScale = 10.0f;
-	float audioSpeedMultiplier = 0.15f;
-	float baseSpeedElapsedTimeBumpy = 0.0002f;
-	float baseSpeedElapsedTime = 0.0002f;
-
-	float cameraSpeed = 1.0f;
-	float motionAmount = 1.2f;
-	float tunnelRoundness = 0.0f;
-	float animationSpeed = 1.0f;
-	float farPlane = 1000.0f;
-	bool freeCamera = false;
+	bool freeCamera = true;
 	float freeCamSpeed = 15.0f;
-	float segmentLength = 12.0f;
-	
+	float farPlane = 10000.0f;
+	float orbitAngle = 0.0f;
+
+	// Terrain params
+	float globeRadius = 5.0f;
+	int sectorCount = 128;
+	int stackCount = 64;
+	float terrainAmplitude = 0.6f;
+	float terrainFrequency = 0.8f;
+	int terrainOctaves = 6;
+	float persistence = 0.45f;
+	float lacunarity = 2.1f;
+	unsigned int terrainSeed = 42;
+
+	float waterLevel = 0.15f;
+
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(fe::XRGameOptions(width, height, vr)) {
 
-		SetClearColor(0.1f, 0.3f, 1);
+		SetClearColor(0.05f, 0.05f, 0.15f);
 
-		// IF 
 		if (!useVulkan)
 			LoadShaders("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
 
@@ -82,54 +55,119 @@ public:
 		GetPhysicsEngine()->EnableGravity();
 	}
 
-	void OnPreSwap() override {
-		// ovr.CaptureAndSubmit();
-	}
+	void OnPreSwap() override {}
 
-	void RebuildPlayerPhysicsBody() {
-		auto physicsEngine = GetPhysicsEngine();
-		if (!player || !physicsEngine) return;
+	fe::Mesh<> GenerateTerrainSphere() {
+		const float PI = 3.14159265359f;
+		std::vector<fe::Vertex> vertices;
+		std::vector<uint32_t> indices;
 
-		const glm::vec3 size = useRectangularPlayerHitbox ? glm::vec3(0.4f, 1.5f, 0.4f) : glm::vec3(1.0f, 1.0f, 1.0f);
-		auto newPhysics = physicsEngine->CreateObject(size, true);
-		if (!newPhysics) return;
+		for (int stack = 0; stack <= stackCount; stack++) {
+			float phi = PI * stack / stackCount;
+			float v = (float)stack / stackCount;
+			for (int sector = 0; sector <= sectorCount; sector++) {
+				float theta = 2.0f * PI * sector / sectorCount;
+				float u = (float)sector / sectorCount;
 
-		this->player->SetPhysicsObject(std::move(newPhysics));
-		if (this->player->physicsObject) {
-			this->player->physicsObject->SetPosition(this->player->state.position);
+				// Spherical coordinates
+				float nx = sin(phi) * cos(theta);
+				float ny = cos(phi);
+				float nz = sin(phi) * sin(theta);
+
+				// Multi-octave noise for terrain height
+				float noiseVal = 0.0f;
+				float amplitude = 1.0f;
+				float frequency = terrainFrequency;
+				float maxAmplitude = 0.0f;
+
+				for (int o = 0; o < terrainOctaves; o++) {
+					noiseVal += glm::perlin(glm::vec2(nx * frequency + (float)terrainSeed,
+					                                   nz * frequency + (float)terrainSeed)) * amplitude;
+					maxAmplitude += amplitude;
+					amplitude *= persistence;
+					frequency *= lacunarity;
+				}
+				noiseVal /= maxAmplitude;
+
+				// Normalize to 0..1
+				float h = noiseVal * 0.5f + 0.5f;
+
+				// Displace along normal
+				float r = globeRadius + h * terrainAmplitude;
+
+				float x = r * nx;
+				float y = r * ny;
+				float z = r * nz;
+
+				// Normal will be recalculated below
+				vertices.push_back(fe::Vertex(x, y, z, nx, ny, nz, u, v));
+			}
 		}
+
+		// Build indices
+		for (int stack = 0; stack < stackCount; stack++) {
+			for (int sector = 0; sector < sectorCount; sector++) {
+				int current = stack * (sectorCount + 1) + sector;
+				int next = current + sectorCount + 1;
+				indices.push_back(current);
+				indices.push_back(current + 1);
+				indices.push_back(next);
+				indices.push_back(current + 1);
+				indices.push_back(next + 1);
+				indices.push_back(next);
+			}
+		}
+
+		// Recalculate normals using finite differences
+		for (int stack = 0; stack <= stackCount; stack++) {
+			for (int sector = 0; sector <= sectorCount; sector++) {
+				int idx = stack * (sectorCount + 1) + sector;
+				int idxRight = stack * (sectorCount + 1) + ((sector + 1) % (sectorCount + 1));
+				int idxLeft  = stack * (sectorCount + 1) + ((sector - 1 + sectorCount + 1) % (sectorCount + 1));
+				int idxDown = std::max(0, stack - 1) * (sectorCount + 1) + sector;
+				int idxUp   = std::min(stackCount, stack + 1) * (sectorCount + 1) + sector;
+
+				glm::vec3 tangent = vertices[idxRight].position - vertices[idxLeft].position;
+				glm::vec3 bitangent = vertices[idxUp].position - vertices[idxDown].position;
+				glm::vec3 normal = glm::normalize(glm::cross(tangent, bitangent));
+
+				// Ensure normal points outward
+				if (glm::dot(normal, vertices[idx].position) < 0.0f)
+					normal = -normal;
+
+				vertices[idx].normal = normal;
+			}
+		}
+
+		return fe::Mesh<>(vertices, indices);
 	}
 
 	void LoadModels() {
 
+		// Globe with procedural terrain
+		auto globeMesh = GenerateTerrainSphere();
+		auto globeObject = std::make_shared<fe::Object<>>(globeMesh);
+		globeObject->name = "Globe";
+		globeObject->state.position = glm::vec3(0.0f);
+		globeObject->color = glm::vec3(0.3f, 0.6f, 0.3f);
+		this->scene->AddObject(globeObject);
+
+		// Player
 		this->player = std::make_shared<fe::Character>();
 		this->scene->AddObject(player);
-		this->player->state.position = glm::vec3(0.0f, 2.0f, 5.0f);
-		this->player->gravityEnabled = true;
-		RebuildPlayerPhysicsBody();
-		if (this->player->physicsObject) {
-			this->player->physicsObject->SetPosition(this->player->state.position);
-		}
-
-		auto sphereMesh = fe::Primitives::GenerateSphere(0.5f, 32, 24);
-		auto sphereObject = std::make_shared<fe::Object<>>(sphereMesh);
-		sphereObject->name = "Sphere";
-		sphereObject->state.position = glm::vec3(2.0f, 1.0f, 0.0f);
-		this->scene->AddObject(sphereObject);
+		this->player->state.position = glm::vec3(0.0f, 0.0f, globeRadius * 3.0f);
+		this->player->gravityEnabled = false;
 	}
 
 	void SyncCameraToPlayer() {
 		if (!player || freeCamera) return;
-
-		const glm::vec3 headOffset(0.0f, 1.6f, 0.0f);
-		camera->SetPos(player->state.position + headOffset);
+		camera->SetPos(player->state.position + glm::vec3(0.0f, 1.6f, 0.0f));
 	}
 
 	void ProcessInput() {
 		SDL_Event event;
 		fe::SDLWindow *window = (fe::SDLWindow*)this->window.get();
 		while (window->PollSDLEvent(&event)) {
-			// continue;
 			ImGui_ImplSDL3_ProcessEvent(&event);
 			auto io = ImGui::GetIO();
 			switch (event.type) {
@@ -169,16 +207,6 @@ public:
 			}
 		}
 
-		if (!freeCamera) {
-			if (window->IsKeyDown(SDL_SCANCODE_W)) this->player->Move(fe::Direction::Forwards, camera.get());
-			if (window->IsKeyDown(SDL_SCANCODE_A)) this->player->Move(fe::Direction::Left, camera.get());
-			if (window->IsKeyDown(SDL_SCANCODE_S)) this->player->Move(fe::Direction::Backwards, camera.get());
-			if (window->IsKeyDown(SDL_SCANCODE_D)) this->player->Move(fe::Direction::Right, camera.get());
-
-			if (window->IsKeyDown(SDL_SCANCODE_SPACE)) this->player->Move(fe::Direction::Up, camera.get());
-			if (window->IsKeyDown(SDL_SCANCODE_LSHIFT)) this->player->Move(fe::Direction::Down, camera.get());
-		}
-
 		if (window->IsKeyDown(SDL_SCANCODE_ESCAPE)) window->StopMouseCapture();
 		if (ImGui::GetIO().WantCaptureMouse) window->StopMouseCapture();
 	}
@@ -188,24 +216,16 @@ public:
 		window->Show();
 		window->DisableVSync();
 
-		player->state.position.z = 5;
-		player->state.position.y = 2;
-		if (player->physicsObject) {
-			player->physicsObject->SetPosition(player->state.position);
-		}
 		camera->farDist = farPlane;
 		camera->SetAspect(camera->aspect);
-		SyncCameraToPlayer();
-		float elapsedTimeBumpy = 0.0f;
-		float elapsedTime = 0.0f;
+		camera->SetPos(glm::vec3(0.0f, 0.0f, globeRadius * 3.0f));
+		camera->pitch = 0.0f;
+		camera->yaw = -90.0f;
+		camera->UpdateDirection();
 
 		while (!window->ShouldClose()) {
 
 			ProcessInput();
-
-			if (!freeCamera) {
-				SyncCameraToPlayer();
-			}
 
 			if (freeCamera) {
 				double dt = fpsCounter.deltaTime;
@@ -219,7 +239,6 @@ public:
 				if (window->IsKeyDown(SDL_SCANCODE_SPACE)) cp += camera->up * spd;
 				if (window->IsKeyDown(SDL_SCANCODE_LSHIFT)) cp -= camera->up * spd;
 				camera->SetPos(cp);
-			} else {
 			}
 
 			Update();
@@ -231,12 +250,30 @@ public:
 
 	void InitUI() override {}
 
-
 	void DrawUI() override {
 		if (!showDebugUI) return;
 		BeginFrame();
 
 		DrawDebugUI();
+
+		ImGui::Begin("Terrain");
+		ImGui::SliderFloat("Amplitude", &terrainAmplitude, 0.0f, 3.0f);
+		ImGui::SliderFloat("Frequency", &terrainFrequency, 0.1f, 5.0f);
+		ImGui::SliderInt("Octaves", &terrainOctaves, 1, 10);
+		ImGui::SliderFloat("Persistence", &persistence, 0.0f, 1.0f);
+		ImGui::SliderFloat("Lacunarity", &lacunarity, 1.0f, 4.0f);
+		ImGui::SliderFloat("Radius", &globeRadius, 1.0f, 20.0f);
+		ImGui::SliderFloat("Water Level", &waterLevel, 0.0f, 1.0f);
+		if (ImGui::Button("Regenerate")) {
+			terrainSeed = static_cast<unsigned int>(rand());
+			// Rebuild globe
+			auto globeMesh = GenerateTerrainSphere();
+			auto globe = scene->FindObjectByName("Globe");
+			if (globe) {
+				globe->mesh = std::make_shared<fe::Mesh<>>(globeMesh);
+			}
+		}
+		ImGui::End();
 
 		EndFrame();
 	}
