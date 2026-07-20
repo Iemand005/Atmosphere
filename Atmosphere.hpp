@@ -232,9 +232,9 @@ public:
 
 		camera->farDist = farPlane;
 		camera->SetAspect(camera->aspect);
-		camera->SetPos(glm::vec3(0.0f, globeRadius + planeAltitude + 2.0f, -5.0f));
-		camera->pitch = -15.0f;
-		camera->yaw = -90.0f;
+		camera->SetPos(glm::vec3(0.0f, globeRadius + planeAltitude + 1.5f, -4.0f));
+		camera->pitch = -20.0f;
+		camera->yaw = 90.0f;
 		camera->UpdateDirection();
 
 		while (!window->ShouldClose()) {
@@ -256,8 +256,8 @@ public:
 				camera->SetPos(cp);
 			}
 
-			// Rotate globe to simulate flight
-			globeObject->state.rotation.y += flightVelocity * dt;
+			// Rotate globe to simulate forward flight
+			globeObject->state.rotation.x -= flightVelocity * dt;
 
 			// Keep plane above the globe
 			if (planeObject) {
@@ -300,7 +300,7 @@ public:
 		ImGui::SliderFloat("Velocity", &flightVelocity, 0.0f, 200.0f);
 		ImGui::SliderFloat("Altitude", &planeAltitude, 0.1f, 5.0f);
 		if (ImGui::Button("Reset Rotation")) {
-			globeObject->state.rotation.y = 0.0f;
+			globeObject->state.rotation.x = 0.0f;
 		}
 		ImGui::End();
 
