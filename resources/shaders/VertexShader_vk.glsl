@@ -10,6 +10,7 @@ layout (location = 2) out vec2 TexCoord;
 
 layout(push_constant) uniform PushConstants {
     mat4 model;
+    vec4 objectColor;
 } pc;
 
 layout(binding = 0) uniform UBO {
