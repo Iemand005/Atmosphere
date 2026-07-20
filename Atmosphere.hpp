@@ -46,7 +46,7 @@ public:
 	// Flight simulator
 	float flightVelocity = 30.0f;
 	float planeAltitude = 0.8f;
-	float planeSize = 0.4f;
+	float planeSize = 1.0f;
 	std::shared_ptr<fe::Object<>> planeObject;
 
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(fe::XRGameOptions(width, height, vr)) {
@@ -159,11 +159,11 @@ public:
 		this->scene->AddObject(globeObject);
 
 		// Flight plane (simple rectangle)
-		auto planeMesh = fe::Primitives::GeneratePlane(planeSize, planeSize * 0.6f);
+		auto planeMesh = fe::Primitives::GeneratePlane(planeSize, planeSize);
 		planeObject = std::make_shared<fe::Object<>>(planeMesh);
 		planeObject->name = "Plane";
 		planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
-		planeObject->color = glm::vec3(1.0f, 0.25f, 0.1f);
+		planeObject->color = glm::vec3(0.0f, 0.0f, 0.0f);
 		this->scene->AddObject(planeObject);
 
 		// Player
@@ -232,8 +232,8 @@ public:
 
 		camera->farDist = farPlane;
 		camera->SetAspect(camera->aspect);
-		camera->SetPos(glm::vec3(0.0f, 0.0f, globeRadius * 3.0f));
-		camera->pitch = 0.0f;
+		camera->SetPos(glm::vec3(0.0f, globeRadius + planeAltitude + 2.0f, -5.0f));
+		camera->pitch = -15.0f;
 		camera->yaw = -90.0f;
 		camera->UpdateDirection();
 
