@@ -45,6 +45,7 @@ public:
 
 	// Flight simulator
 	float flightVelocity = 30.0f;
+	float flightDirection = 0.0f;
 	float planeAltitude = 0.8f;
 	float planeSize = 1.0f;
 	std::shared_ptr<fe::Object<>> planeObject;
@@ -256,8 +257,10 @@ public:
 				camera->SetPos(cp);
 			}
 
-			// Rotate globe to simulate forward flight
-			globeObject->state.rotation.x -= flightVelocity * dt;
+			// Rotate globe to simulate flight in given direction
+			float dirRad = glm::radians(flightDirection);
+			globeObject->state.rotation.x -= flightVelocity * dt * cos(dirRad);
+			globeObject->state.rotation.y += flightVelocity * dt * sin(dirRad);
 
 			// Keep plane above the globe
 			if (planeObject) {
@@ -297,10 +300,12 @@ public:
 		ImGui::End();
 
 		ImGui::Begin("Flight");
-		ImGui::SliderFloat("Velocity", &flightVelocity, 0.0f, 200.0f);
-		ImGui::SliderFloat("Altitude", &planeAltitude, 0.1f, 5.0f);
+		ImGui::DragFloat("Velocity", &flightVelocity, 1.0f, 0.0f, 200.0f);
+		ImGui::DragFloat("Direction", &flightDirection, 0.5f, -180.0f, 180.0f);
+		ImGui::DragFloat("Altitude", &planeAltitude, 0.05f, 0.1f, 5.0f);
 		if (ImGui::Button("Reset Rotation")) {
 			globeObject->state.rotation.x = 0.0f;
+			globeObject->state.rotation.y = 0.0f;
 		}
 		ImGui::End();
 
