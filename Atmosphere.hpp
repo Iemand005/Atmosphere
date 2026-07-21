@@ -31,14 +31,14 @@ public:
 	float orbitAngle = 0.0f;
 
 	// Terrain params
-	float globeRadius = 5.0f;
-	int sectorCount = 128;
-	int stackCount = 64;
-	float terrainAmplitude = 0.6f;
-	float terrainFrequency = 0.8f;
-	int terrainOctaves = 6;
-	float persistence = 0.45f;
-	float lacunarity = 2.1f;
+	float globeRadius = 20.0f;
+	int sectorCount = 256;
+	int stackCount = 128;
+	float terrainAmplitude = 2.5f;
+	float terrainFrequency = 1.2f;
+	int terrainOctaves = 8;
+	float persistence = 0.5f;
+	float lacunarity = 2.0f;
 	unsigned int terrainSeed = 42;
 
 	float waterLevel = 0.15f;
@@ -49,7 +49,9 @@ public:
 	float flightDirection = 0.0f;
 	float turnSpeed = 90.0f;
 	float joystickInputX = 0.0f;
-	float planeAltitude = 0.8f;
+	float planeLatitude = 60.0f;
+	float planeLongitude = 0.0f;
+	float planeAltitude = 1.5f;
 	float planeSize = 1.0f;
 	std::shared_ptr<fe::Object<>> planeObject;
 
@@ -271,25 +273,51 @@ public:
 				camera->SetPos(cp);
 			}
 
-			// Rotate globe to simulate flight in given direction
+			// Update lat/lon based on heading
 			float dirRad = glm::radians(flightDirection);
-			globeObject->state.rotation.x -= flightVelocity * dt * cos(dirRad);
-			globeObject->state.rotation.y += flightVelocity * dt * sin(dirRad);
+			float angVel = flightVelocity / globeRadius;
+			float latRad = glm::radians(planeLatitude);
+			float cosLat = cos(latRad);
 
-			// Keep plane above the globe and facing the direction of travel
+			planeLatitude += glm::degrees(angVel * dt * cos(dirRad));
+			planeLongitude += glm::degrees(angVel * dt * sin(dirRad) / cosLat);
+			planeLatitude = glm::clamp(planeLatitude, -85.0f, 85.0f);
+
+			// Set globe rotation to put plane position at the top
+			globeObject->state.rotation.x = planeLatitude - 90.0f;
+			globeObject->state.rotation.y = planeLongitude - 90.0f;
+
+			// Compute heading direction in world space
+			float phi = glm::radians(90.0f - planeLatitude);
+			float theta = glm::radians(planeLongitude);
+
+			glm::vec3 south(cos(phi)*cos(theta), -sin(phi), cos(phi)*sin(theta));
+			glm::vec3 east(-sin(theta), 0.0f, cos(theta));
+
+			glm::vec3 headingLocal = -cos(dirRad) * south + sin(dirRad) * east;
+
+			float rx = glm::radians(planeLatitude - 90.0f);
+			float ry = glm::radians(planeLongitude - 90.0f);
+			glm::mat4 globeRot(1.0f);
+			globeRot = glm::rotate(globeRot, ry, glm::vec3(0, 1, 0));
+			globeRot = glm::rotate(globeRot, rx, glm::vec3(1, 0, 0));
+
+			glm::vec3 headingWorld = glm::vec3(globeRot * glm::vec4(headingLocal, 0.0f));
+
+			// Keep plane above the globe, facing the heading direction
 			if (planeObject) {
 				planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
-				planeObject->state.rotation.y = flightDirection;
+				planeObject->state.rotation.y = glm::degrees(atan2f(-headingWorld.x, -headingWorld.z));
 			}
 
 			// Camera behind the plane
 			if (!freeCamera && planeObject) {
-				float camDist = 4.0f;
-				float camHeight = 1.5f;
+				float camDist = 8.0f;
+				float camHeight = 3.0f;
 				glm::vec3 planePos = planeObject->state.position;
-				glm::vec3 behind = glm::vec3(sin(dirRad), 0.0f, cos(dirRad));
+				glm::vec3 behind = -headingWorld;
 				camera->SetPos(planePos + behind * camDist + glm::vec3(0.0f, camHeight, 0.0f));
-				camera->yaw = -flightDirection - 90.0f;
+				camera->yaw = glm::degrees(atan2f(headingWorld.z, headingWorld.x));
 				camera->pitch = -20.0f;
 				camera->UpdateDirection();
 			}
