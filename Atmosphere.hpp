@@ -280,14 +280,16 @@ public:
 			if (planeObject) {
 				planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
 				planeObject->state.rotation.y = flightDirection;
+			}
 
-				// Camera behind the plane
+			// Camera behind the plane
+			if (!freeCamera && planeObject) {
 				float camDist = 4.0f;
 				float camHeight = 1.5f;
 				glm::vec3 planePos = planeObject->state.position;
 				glm::vec3 behind = glm::vec3(sin(dirRad), 0.0f, cos(dirRad));
 				camera->SetPos(planePos + behind * camDist + glm::vec3(0.0f, camHeight, 0.0f));
-				camera->yaw = -flightDirection + 90.0f;
+				camera->yaw = -flightDirection - 90.0f;
 				camera->pitch = -20.0f;
 				camera->UpdateDirection();
 			}
