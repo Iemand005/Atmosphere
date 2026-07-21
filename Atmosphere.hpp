@@ -58,7 +58,7 @@ public:
 		// fe::SDLWindow win = (fe::SDLWindow)window;
 		auto win = GetWindow<fe::SDLWindow>();
 
-		win->GetJoysticks();
+		joysticks = win->GetJoysticks();
 
 		if (!useVulkan)
 			LoadShaders("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
@@ -188,22 +188,19 @@ public:
 	void ProcessInput() {
 		SDL_Event event;
 		fe::SDLWindow *window = (fe::SDLWindow*)this->window.get();
+
+		window->UpdateJoysticks();
+
 		while (window->PollSDLEvent(&event)) {
 			ImGui_ImplSDL3_ProcessEvent(&event);
 			auto io = ImGui::GetIO();
 			switch (event.type) {
-				case SDL_EVENT_QUIT:
-					window->PrepareClose();
-					break;
 				case SDL_EVENT_MOUSE_BUTTON_DOWN:
 					if (event.button.button == SDL_BUTTON_LEFT && !io.WantCaptureMouse) {
 						window->StartMouseCapture();
 					}
 					break;
-			case SDL_EVENT_WINDOW_RESIZED:
-			case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-				break;
-				case SDL_EVENT_MOUSE_MOTION:
+			case SDL_EVENT_MOUSE_MOTION:
 				{
 					if (!window->IsCapturingMouse()) break;
 					float sensitivity = 0.1f;
@@ -213,18 +210,18 @@ public:
 					camera->pitch = std::clamp(camera->pitch, -89.0f, 89.0f);
 					break;
 				}
-				case SDL_EVENT_KEY_DOWN:
-					if (event.key.key == SDLK_F11) {
-						window->ToggleFullscreen();
-					}
-					else if (event.key.key == SDLK_F3) {
-						showDebugUI = !showDebugUI;
-					}
-					else if (event.key.key == SDLK_F2) {
-						freeCamera = !freeCamera;
-						window->StartMouseCapture();
-					}
-					break;
+			case SDL_EVENT_KEY_DOWN:
+				if (event.key.key == SDLK_F11) {
+					window->ToggleFullscreen();
+				}
+				else if (event.key.key == SDLK_F3) {
+					showDebugUI = !showDebugUI;
+				}
+				else if (event.key.key == SDLK_F2) {
+					freeCamera = !freeCamera;
+					window->StartMouseCapture();
+				}
+				break;
 			}
 		}
 
@@ -312,6 +309,19 @@ public:
 		if (ImGui::Button("Reset Rotation")) {
 			globeObject->state.rotation.x = 0.0f;
 			globeObject->state.rotation.y = 0.0f;
+		}
+		ImGui::End();
+
+		ImGui::Begin("Joysticks");
+		{
+			for (auto &boystick : joysticks) {
+				// joysticks
+				ImGui::Text("%s", boystick.GetName().c_str());
+				;
+				auto axes = boystick.GetAxis();
+				ImGui::DragFloat("X", &axes.x);
+				ImGui::DragFloat("Y", &axes.y);
+			}
 		}
 		ImGui::End();
 
