@@ -198,8 +198,8 @@ public:
 
 		if (joysticks.size()) {
 			auto axes = joysticks[0].GetAxis();
-			joystickInputX = axes.x;
-			joystickInputY = axes.y;
+			joystickInputX = -axes.x;
+			joystickInputY = -axes.y;
 		}
 
 		while (window->PollSDLEvent(&event)) {
