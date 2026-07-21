@@ -191,6 +191,11 @@ public:
 
 		window->UpdateJoysticks();
 
+		if (joysticks.size()) {
+			auto axes = joysticks[0].GetAxis();
+			flightDirection = axes.x;
+		}
+
 		while (window->PollSDLEvent(&event)) {
 			ImGui_ImplSDL3_ProcessEvent(&event);
 			auto io = ImGui::GetIO();
