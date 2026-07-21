@@ -12,6 +12,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/noise.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_sdl3.h>
@@ -45,12 +46,12 @@ public:
 	std::shared_ptr<fe::Object<>> globeObject;
 
 	// Flight simulator
-	float flightVelocity = 30.0f;
-	float flightDirection = 0.0f;
+	float flightVelocity = 15.0f;
+	float heading = 0.0f;
 	float turnSpeed = 90.0f;
 	float joystickInputX = 0.0f;
-	float planeLatitude = 60.0f;
-	float planeLongitude = 0.0f;
+	float joystickInputY = 0.0f;
+	glm::quat globeOrientation{1.0f, 0.0f, 0.0f, 0.0f};
 	float planeAltitude = 1.5f;
 	float planeSize = 1.0f;
 	std::shared_ptr<fe::Object<>> planeObject;
@@ -198,6 +199,7 @@ public:
 		if (joysticks.size()) {
 			auto axes = joysticks[0].GetAxis();
 			joystickInputX = axes.x;
+			joystickInputY = -axes.y;
 		}
 
 		while (window->PollSDLEvent(&event)) {
@@ -236,6 +238,15 @@ public:
 
 		if (window->IsKeyDown(SDL_SCANCODE_ESCAPE)) window->StopMouseCapture();
 		if (ImGui::GetIO().WantCaptureMouse) window->StopMouseCapture();
+
+		if (!joysticks.size() && !freeCamera) {
+			if (window->IsKeyDown(SDL_SCANCODE_W)) joystickInputY = 1.0f;
+			else if (window->IsKeyDown(SDL_SCANCODE_S)) joystickInputY = -1.0f;
+			else joystickInputY = 0.0f;
+			if (window->IsKeyDown(SDL_SCANCODE_A)) joystickInputX = -1.0f;
+			else if (window->IsKeyDown(SDL_SCANCODE_D)) joystickInputX = 1.0f;
+			else joystickInputX = 0.0f;
+		}
 	}
 
 	void Run() {
@@ -256,9 +267,8 @@ public:
 
 			double dt = fpsCounter.deltaTime;
 
-			flightDirection += joystickInputX * turnSpeed * dt;
-			if (flightDirection > 180.0f) flightDirection -= 360.0f;
-			if (flightDirection < -180.0f) flightDirection += 360.0f;
+			// Update heading (turn left/right)
+			heading += joystickInputX * turnSpeed * dt;
 
 			if (freeCamera) {
 				float spd = freeCamSpeed * dt;
@@ -273,41 +283,21 @@ public:
 				camera->SetPos(cp);
 			}
 
-			// Update lat/lon based on heading
-			float dirRad = glm::radians(flightDirection);
-			float angVel = flightVelocity / globeRadius;
-			float latRad = glm::radians(planeLatitude);
-			float cosLat = cos(latRad);
+			// Move globe: rotate around heading axis (always forward for the plane)
+			float speed = flightVelocity * joystickInputY;
+			float headRad = glm::radians(heading);
+			glm::vec3 forwardAxis(cos(headRad), 0.0f, -sin(headRad));
+			float moveAngle = (speed / globeRadius) * dt;
+			globeOrientation = globeOrientation * glm::angleAxis(moveAngle, forwardAxis);
+			globeObject->state.orientation = globeOrientation;
 
-			planeLatitude += glm::degrees(angVel * dt * cos(dirRad));
-			planeLongitude += glm::degrees(angVel * dt * sin(dirRad) / cosLat);
-			planeLatitude = glm::clamp(planeLatitude, -85.0f, 85.0f);
+			// Travel direction in world space
+			glm::vec3 travelDir = glm::normalize(globeOrientation * glm::vec3(0.0f, 0.0f, -1.0f));
 
-			// Set globe rotation to put plane position at the top
-			globeObject->state.rotation.x = planeLatitude - 90.0f;
-			globeObject->state.rotation.y = planeLongitude - 90.0f;
-
-			// Compute heading direction in world space
-			float phi = glm::radians(90.0f - planeLatitude);
-			float theta = glm::radians(planeLongitude);
-
-			glm::vec3 south(cos(phi)*cos(theta), -sin(phi), cos(phi)*sin(theta));
-			glm::vec3 east(-sin(theta), 0.0f, cos(theta));
-
-			glm::vec3 headingLocal = -cos(dirRad) * south + sin(dirRad) * east;
-
-			float rx = glm::radians(planeLatitude - 90.0f);
-			float ry = glm::radians(planeLongitude - 90.0f);
-			glm::mat4 globeRot(1.0f);
-			globeRot = glm::rotate(globeRot, ry, glm::vec3(0, 1, 0));
-			globeRot = glm::rotate(globeRot, rx, glm::vec3(1, 0, 0));
-
-			glm::vec3 headingWorld = glm::vec3(globeRot * glm::vec4(headingLocal, 0.0f));
-
-			// Keep plane above the globe, facing the heading direction
+			// Plane above globe, facing travel direction
 			if (planeObject) {
 				planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
-				planeObject->state.rotation.y = glm::degrees(atan2f(-headingWorld.x, -headingWorld.z));
+				planeObject->state.rotation.y = glm::degrees(atan2f(-travelDir.x, -travelDir.z));
 			}
 
 			// Camera behind the plane
@@ -315,9 +305,9 @@ public:
 				float camDist = 8.0f;
 				float camHeight = 3.0f;
 				glm::vec3 planePos = planeObject->state.position;
-				glm::vec3 behind = -headingWorld;
+				glm::vec3 behind = -travelDir;
 				camera->SetPos(planePos + behind * camDist + glm::vec3(0.0f, camHeight, 0.0f));
-				camera->yaw = glm::degrees(atan2f(headingWorld.z, headingWorld.x));
+				camera->yaw = glm::degrees(atan2f(travelDir.z, travelDir.x));
 				camera->pitch = -20.0f;
 				camera->UpdateDirection();
 			}
