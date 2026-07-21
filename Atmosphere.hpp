@@ -35,11 +35,12 @@ public:
 	float globeRadius = 20.0f;
 	int sectorCount = 256;
 	int stackCount = 128;
-	float terrainAmplitude = 2.5f;
-	float terrainFrequency = 1.2f;
+	float terrainAmplitude = 3.5f;
+	float terrainFrequency = 1.5f;
 	int terrainOctaves = 8;
 	float persistence = 0.5f;
 	float lacunarity = 2.0f;
+	float ridgeAmount = 0.5f;
 	unsigned int terrainSeed = 42;
 
 	float waterLevel = 0.15f;
@@ -75,6 +76,25 @@ public:
 
 	void OnPreSwap() override {}
 
+	float GetTerrainHeight(float nx, float ny, float nz) const {
+		float noiseVal = 0.0f;
+		float amplitude = 1.0f;
+		float frequency = terrainFrequency;
+		float maxAmplitude = 0.0f;
+		for (int o = 0; o < terrainOctaves; o++) {
+			float n = glm::perlin(glm::vec3(nx * frequency + (float)terrainSeed,
+			                                ny * frequency + (float)terrainSeed,
+			                                nz * frequency + (float)terrainSeed));
+			n = (1.0f - ridgeAmount) * n + ridgeAmount * (1.0f - std::abs(n));
+			noiseVal += n * amplitude;
+			maxAmplitude += amplitude;
+			amplitude *= persistence;
+			frequency *= lacunarity;
+		}
+		noiseVal /= maxAmplitude;
+		return (noiseVal * 0.5f + 0.5f) * terrainAmplitude;
+	}
+
 	fe::Mesh<> GenerateTerrainSphere() {
 		const float PI = 3.14159265359f;
 		std::vector<fe::Vertex> vertices;
@@ -92,23 +112,8 @@ public:
 				float ny = cos(phi);
 				float nz = sin(phi) * sin(theta);
 
-				// Multi-octave noise for terrain height
-				float noiseVal = 0.0f;
-				float amplitude = 1.0f;
-				float frequency = terrainFrequency;
-				float maxAmplitude = 0.0f;
-
-				for (int o = 0; o < terrainOctaves; o++) {
-					noiseVal += glm::perlin(glm::vec2(nx * frequency + (float)terrainSeed,
-					                                   nz * frequency + (float)terrainSeed)) * amplitude;
-					maxAmplitude += amplitude;
-					amplitude *= persistence;
-					frequency *= lacunarity;
-				}
-				noiseVal /= maxAmplitude;
-
-				// Normalize to 0..1
-				float h = noiseVal * 0.5f + 0.5f;
+				// Terrain height using helper
+				float h = GetTerrainHeight(nx, ny, nz) / terrainAmplitude;
 
 				// Displace along normal
 				float r = globeRadius + h * terrainAmplitude;
@@ -291,9 +296,17 @@ public:
 			globeOrientation = glm::angleAxis(moveAngle, worldAxis) * globeOrientation;
 			globeObject->state.orientation = globeOrientation;
 
+			// Sample terrain height at the north pole after globe rotation
+			float terrainH = 0.0f;
+			{
+				glm::vec3 localUp = glm::inverse(globeOrientation) * glm::vec3(0.0f, 1.0f, 0.0f);
+				localUp = glm::normalize(localUp);
+				terrainH = GetTerrainHeight(localUp.x, localUp.y, localUp.z);
+			}
+
 			// Plane stays at the top, always faces the world-space heading direction
 			if (planeObject) {
-				planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
+				planeObject->state.position = glm::vec3(0.0f, globeRadius + terrainH + planeAltitude, 0.0f);
 				planeObject->state.orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 				planeObject->state.rotation = glm::vec3(0.0f);
 				planeObject->state.rotation.y = heading;
@@ -331,6 +344,7 @@ public:
 		ImGui::SliderFloat("Frequency", &terrainFrequency, 0.1f, 5.0f);
 		ImGui::SliderInt("Octaves", &terrainOctaves, 1, 12);
 		ImGui::SliderFloat("Persistence", &persistence, 0.0f, 1.0f);
+		ImGui::SliderFloat("Ridge Amount", &ridgeAmount, 0.0f, 1.0f);
 		ImGui::SliderFloat("Lacunarity", &lacunarity, 1.0f, 4.0f);
 		ImGui::SliderFloat("Radius", &globeRadius, 5.0f, 50.0f);
 		ImGui::SliderFloat("Water Level", &waterLevel, 0.0f, 1.0f);
