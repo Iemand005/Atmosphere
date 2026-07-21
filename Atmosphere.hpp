@@ -47,6 +47,8 @@ public:
 	// Flight simulator
 	float flightVelocity = 30.0f;
 	float flightDirection = 0.0f;
+	float turnSpeed = 90.0f;
+	float joystickInputX = 0.0f;
 	float planeAltitude = 0.8f;
 	float planeSize = 1.0f;
 	std::shared_ptr<fe::Object<>> planeObject;
@@ -193,7 +195,7 @@ public:
 
 		if (joysticks.size()) {
 			auto axes = joysticks[0].GetAxis();
-			flightDirection = axes.x;
+			joystickInputX = axes.x;
 		}
 
 		while (window->PollSDLEvent(&event)) {
@@ -252,6 +254,10 @@ public:
 
 			double dt = fpsCounter.deltaTime;
 
+			flightDirection += joystickInputX * turnSpeed * dt;
+			if (flightDirection > 180.0f) flightDirection -= 360.0f;
+			if (flightDirection < -180.0f) flightDirection += 360.0f;
+
 			if (freeCamera) {
 				float spd = freeCamSpeed * dt;
 				glm::vec3 cp = camera->GetPos();
@@ -270,9 +276,10 @@ public:
 			globeObject->state.rotation.x -= flightVelocity * dt * cos(dirRad);
 			globeObject->state.rotation.y += flightVelocity * dt * sin(dirRad);
 
-			// Keep plane above the globe
+			// Keep plane above the globe and facing the direction of travel
 			if (planeObject) {
 				planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
+				planeObject->state.rotation.y = flightDirection;
 			}
 
 			Update();
@@ -310,6 +317,7 @@ public:
 		ImGui::Begin("Flight");
 		ImGui::DragFloat("Velocity", &flightVelocity, 1.0f, 0.0f, 200.0f);
 		ImGui::DragFloat("Direction", &flightDirection, 0.5f, -180.0f, 180.0f);
+		ImGui::DragFloat("Turn Speed", &turnSpeed, 1.0f, 0.0f, 360.0f);
 		ImGui::DragFloat("Altitude", &planeAltitude, 0.05f, 0.1f, 5.0f);
 		if (ImGui::Button("Reset Rotation")) {
 			globeObject->state.rotation.x = 0.0f;
