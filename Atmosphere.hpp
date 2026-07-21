@@ -288,26 +288,32 @@ public:
 			float headRad = glm::radians(heading);
 			glm::vec3 forwardAxis(cos(headRad), 0.0f, -sin(headRad));
 			float moveAngle = (speed / globeRadius) * dt;
-			globeOrientation = globeOrientation * glm::angleAxis(moveAngle, forwardAxis);
+			globeOrientation = glm::normalize(globeOrientation * glm::angleAxis(moveAngle, forwardAxis));
 			globeObject->state.orientation = globeOrientation;
 
-			// Travel direction in world space
-			glm::vec3 travelDir = glm::normalize(globeOrientation * glm::vec3(0.0f, 0.0f, -1.0f));
-
-			// Plane above globe, facing travel direction
+			// Plane stays at the top of the globe; globe rotates underneath
 			if (planeObject) {
 				planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
-				planeObject->state.rotation.y = glm::degrees(atan2f(-travelDir.x, -travelDir.z));
+				planeObject->state.orientation = glm::quat(1, 0, 0, 0);
+
+				glm::vec3 travelLocal(-sin(headRad), 0.0f, -cos(headRad));
+				glm::vec3 travelWorld = globeOrientation * travelLocal;
+				glm::vec3 forwardTangent = glm::normalize(glm::vec3(travelWorld.x, 0.0f, travelWorld.z));
+				planeObject->state.rotation.y = glm::degrees(atan2f(-forwardTangent.x, -forwardTangent.z));
 			}
 
-			// Camera behind the plane
+			// Camera behind the plane relative to the tangent forward
 			if (!freeCamera && planeObject) {
-				float camDist = 8.0f;
-				float camHeight = 3.0f;
+				float camDist = 12.0f;
+				float camHeight = 4.0f;
 				glm::vec3 planePos = planeObject->state.position;
-				glm::vec3 behind = -travelDir;
-				camera->SetPos(planePos + behind * camDist + glm::vec3(0.0f, camHeight, 0.0f));
-				camera->yaw = glm::degrees(atan2f(travelDir.z, travelDir.x));
+
+				glm::vec3 travelLocal(-sin(headRad), 0.0f, -cos(headRad));
+				glm::vec3 travelWorld = globeOrientation * travelLocal;
+				glm::vec3 forwardTangent = glm::normalize(glm::vec3(travelWorld.x, 0.0f, travelWorld.z));
+
+				camera->SetPos(planePos - forwardTangent * camDist + glm::vec3(0.0f, camHeight, 0.0f));
+				camera->yaw = glm::degrees(atan2f(forwardTangent.z, forwardTangent.x));
 				camera->pitch = -20.0f;
 				camera->UpdateDirection();
 			}
