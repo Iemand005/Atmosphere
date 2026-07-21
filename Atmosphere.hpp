@@ -245,7 +245,7 @@ public:
 
 		camera->farDist = farPlane;
 		camera->SetAspect(camera->aspect);
-		camera->SetPos(glm::vec3(0.0f, globeRadius + planeAltitude + 1.5f, -4.0f));
+		camera->SetPos(glm::vec3(0.0f, globeRadius + planeAltitude + 5.0f, -10.0f));
 		camera->pitch = -20.0f;
 		camera->yaw = 90.0f;
 		camera->UpdateDirection();
