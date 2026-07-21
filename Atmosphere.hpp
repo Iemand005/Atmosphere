@@ -26,7 +26,7 @@ public:
 
 	bool showDebugUI = false;
 	bool freeCamera = false;
-	float freeCamSpeed = 15.0f;
+	float freeCamSpeed = 50.0f;
 	float farPlane = 10000.0f;
 	float orbitAngle = 0.0f;
 
@@ -338,12 +338,12 @@ public:
 		DrawDebugUI();
 
 		ImGui::Begin("Terrain");
-		ImGui::SliderFloat("Amplitude", &terrainAmplitude, 0.0f, 3.0f);
+		ImGui::SliderFloat("Amplitude", &terrainAmplitude, 0.0f, 10.0f);
 		ImGui::SliderFloat("Frequency", &terrainFrequency, 0.1f, 5.0f);
-		ImGui::SliderInt("Octaves", &terrainOctaves, 1, 10);
+		ImGui::SliderInt("Octaves", &terrainOctaves, 1, 12);
 		ImGui::SliderFloat("Persistence", &persistence, 0.0f, 1.0f);
 		ImGui::SliderFloat("Lacunarity", &lacunarity, 1.0f, 4.0f);
-		ImGui::SliderFloat("Radius", &globeRadius, 1.0f, 20.0f);
+		ImGui::SliderFloat("Radius", &globeRadius, 5.0f, 50.0f);
 		ImGui::SliderFloat("Water Level", &waterLevel, 0.0f, 1.0f);
 		if (ImGui::Button("Regenerate")) {
 			terrainSeed = static_cast<unsigned int>(rand());
@@ -358,10 +358,12 @@ public:
 		ImGui::DragFloat("Velocity", &flightVelocity, 1.0f, 0.0f, 200.0f);
 		ImGui::DragFloat("Direction", &flightDirection, 0.5f, -180.0f, 180.0f);
 		ImGui::DragFloat("Turn Speed", &turnSpeed, 1.0f, 0.0f, 360.0f);
-		ImGui::DragFloat("Altitude", &planeAltitude, 0.05f, 0.1f, 5.0f);
-		if (ImGui::Button("Reset Rotation")) {
-			globeObject->state.rotation.x = 0.0f;
-			globeObject->state.rotation.y = 0.0f;
+		ImGui::DragFloat("Altitude", &planeAltitude, 0.1f, 0.5f, 20.0f);
+		ImGui::Text("Lat: %.1f  Lon: %.1f", planeLatitude, planeLongitude);
+		if (ImGui::Button("Reset Position")) {
+			planeLatitude = 60.0f;
+			planeLongitude = 0.0f;
+			flightDirection = 0.0f;
 		}
 		ImGui::End();
 
