@@ -1,4 +1,5 @@
 #pragma once
+#include "window/SDLWindow.hpp"
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
@@ -53,6 +54,11 @@ public:
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(fe::XRGameOptions(width, height, vr)) {
 
 		SetClearColor(0.05f, 0.05f, 0.15f);
+
+		// fe::SDLWindow win = (fe::SDLWindow)window;
+		auto win = GetWindow<fe::SDLWindow>();
+
+		win->GetJoysticks();
 
 		if (!useVulkan)
 			LoadShaders("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
