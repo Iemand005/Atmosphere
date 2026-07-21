@@ -44,7 +44,7 @@ public:
 	unsigned int terrainSeed = 42;
 
 	float waterLevel = 0.15f;
-	std::shared_ptr<fe::Object<>> globeObject;
+	std::shared_ptr<fe::Object> globeObject;
 
 	// Flight simulator
 	float flightVelocity = 15.0f;
@@ -55,7 +55,7 @@ public:
 	glm::quat globeOrientation{1.0f, 0.0f, 0.0f, 0.0f};
 	float planeAltitude = 1.5f;
 	float planeSize = 1.0f;
-	std::shared_ptr<fe::Object<>> planeObject;
+	std::shared_ptr<fe::Object> planeObject;
 
 	Atmosphere(int width = 1000, int height = 1000, bool vr = false) : fe::EditableGame(fe::XRGameOptions(width, height, vr)) {
 
@@ -169,7 +169,7 @@ public:
 
 		// Globe with procedural terrain
 		auto globeMesh = GenerateTerrainSphere();
-		globeObject = std::make_shared<fe::Object<>>(globeMesh);
+		globeObject = std::make_shared<fe::Object>(globeMesh);
 		globeObject->name = "Globe";
 		globeObject->state.position = glm::vec3(0.0f);
 		globeObject->color = glm::vec3(0.3f, 0.6f, 0.3f);
@@ -177,7 +177,7 @@ public:
 
 		// Flight plane (simple rectangle)
 		auto planeMesh = fe::Primitives::GeneratePlane(planeSize, planeSize);
-		planeObject = std::make_shared<fe::Object<>>(planeMesh);
+		planeObject = std::make_shared<fe::Object>(planeMesh);
 		planeObject->name = "Plane";
 		planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
 		planeObject->color = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -352,7 +352,7 @@ public:
 			terrainSeed = static_cast<unsigned int>(rand());
 			if (globeObject) {
 				globeObject->meshes.clear();
-				globeObject->meshes.push_back(GenerateTerrainSphere());
+				globeObject->PushMesh(GenerateTerrainSphere());
 			}
 		}
 		ImGui::End();
