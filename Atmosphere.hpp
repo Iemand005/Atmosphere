@@ -294,7 +294,9 @@ public:
 			// Plane stays at the top of the globe; globe rotates underneath
 			if (planeObject) {
 				planeObject->state.position = glm::vec3(0.0f, globeRadius + planeAltitude, 0.0f);
-				planeObject->state.orientation = glm::quat(1, 0, 0, 0);
+				planeObject->state.orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+				planeObject->state.rotation.x = 0.0f;
+				planeObject->state.rotation.z = 0.0f;
 
 				glm::vec3 travelLocal(-sin(headRad), 0.0f, -cos(headRad));
 				glm::vec3 travelWorld = globeOrientation * travelLocal;
