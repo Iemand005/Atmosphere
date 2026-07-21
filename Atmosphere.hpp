@@ -346,14 +346,12 @@ public:
 
 		ImGui::Begin("Flight");
 		ImGui::DragFloat("Velocity", &flightVelocity, 1.0f, 0.0f, 200.0f);
-		ImGui::DragFloat("Direction", &flightDirection, 0.5f, -180.0f, 180.0f);
+		ImGui::DragFloat("Heading", &heading, 0.5f, -180.0f, 180.0f);
 		ImGui::DragFloat("Turn Speed", &turnSpeed, 1.0f, 0.0f, 360.0f);
 		ImGui::DragFloat("Altitude", &planeAltitude, 0.1f, 0.5f, 20.0f);
-		ImGui::Text("Lat: %.1f  Lon: %.1f", planeLatitude, planeLongitude);
 		if (ImGui::Button("Reset Position")) {
-			planeLatitude = 60.0f;
-			planeLongitude = 0.0f;
-			flightDirection = 0.0f;
+			heading = 0.0f;
+			globeOrientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 		}
 		ImGui::End();
 
