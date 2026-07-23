@@ -71,7 +71,7 @@ public:
 
 		LoadModels();
 
-		GetPhysicsEngine()->EnableGravity();
+		GetPhysicsFactory()->EnableGravity();
 	}
 
 	void OnPreSwap() override {}
